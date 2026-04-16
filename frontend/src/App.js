@@ -43,7 +43,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div style={{ minHeight: '100vh', background: '#f5f5f5', fontFamily: "'Segoe UI', sans-serif" }}>
+        <div style={{ minHeight: '100vh', background: '#f5f5f5', fontFamily: "'Outfit', 'Segoe UI', sans-serif" }}>
           <AppRoutes />
         </div>
       </Router>
