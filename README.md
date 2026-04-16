@@ -1,190 +1,115 @@
-# ELearn LMS
+# Community Skill Exchange Portal
 
-# Community Skill Exchange Portal — Documentation
+**SE ZG503: Full Stack Application Development — Assignment 2026**
+**Student:** Benedict Johnson | **BITS Pilani WILP**
 
-**SE ZG503: Full Stack Application Development**
-**Student:** Benedict Johnson
-
----
-
-## 1. Problem Statement
-
-Schools, neighbourhoods, and online communities have members who are skilled in one area and want to learn another — yet skill-sharing is largely informal and untracked. The **Community Skill Exchange Portal** solves this by providing a structured platform where users register skills they can teach, browse skills they want to learn, request sessions, and exchange credits — with no money involved.
+A full-stack web application where users trade skills using a credit system — no money involved. Users register as learners or instructors, list skills they can teach, browse sessions, and exchange credits.
 
 ---
 
-## 2. Architecture Overview
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, React Router v6, Axios |
+| Backend | Node.js, Express.js, JWT Auth |
+| Database | MongoDB Atlas (Mongoose ODM) |
+| API Docs | Swagger UI (swagger-jsdoc + swagger-ui-express) |
+| AI Tool | Claude (claude.ai) — Option A: Built from scratch with AI assistance |
+
+---
+
+## Project Structure
 
 ```
-┌─────────────────────────────────────┐
-│         React Frontend (Port 3000)  │
-│  React Router · Axios · Context API │
-└────────────────┬────────────────────┘
-                 │ HTTP / REST
-┌────────────────▼────────────────────┐
-│       Express.js Backend (Port 5000)│
-│  JWT Auth · Mongoose · Swagger UI   │
-└────────────────┬────────────────────┘
-                 │ Mongoose ODM
-┌────────────────▼────────────────────┐
-│         MongoDB Atlas (Cloud)        │
-│   Users · Skills · Sessions         │
-└─────────────────────────────────────┘
-```
-
-**Architecture pattern:** Monolithic frontend + RESTful microservice-style backend with domain-separated routes. Each resource (auth, skills, sessions, users) is handled by its own Express router module.
-
----
-
-## 3. Database Schema
-
-### User
-| Field | Type | Notes |
-|---|---|---|
-| _id | ObjectId | Auto-generated |
-| name | String | Required |
-| email | String | Unique, required |
-| password | String | bcrypt hashed |
-| role | Enum | learner / instructor / admin |
-| skillsOffered | [String] | Tags of skills they can teach |
-| skillsWanted | [String] | Tags of skills they want to learn |
-| credits | Number | Default: 5 |
-| bio | String | Optional profile bio |
-| rating | Number | Avg rating from feedback |
-| totalSessions | Number | Completed sessions count |
-
-### Skill
-| Field | Type | Notes |
-|---|---|---|
-| _id | ObjectId | Auto-generated |
-| title | String | Required |
-| description | String | Required |
-| category | Enum | Technology, Music, Languages, Arts, Sports, Cooking, Academic, Other |
-| instructor | ObjectId | Ref: User |
-| creditsRequired | Number | Credits per session (min 1) |
-| maxParticipants | Number | Default: 1 |
-| isActive | Boolean | Soft toggle |
-| tags | [String] | Search tags |
-
-### Session
-| Field | Type | Notes |
-|---|---|---|
-| _id | ObjectId | Auto-generated |
-| skill | ObjectId | Ref: Skill |
-| learner | ObjectId | Ref: User |
-| instructor | ObjectId | Ref: User |
-| scheduledAt | Date | Required |
-| status | Enum | pending / approved / rejected / completed / cancelled |
-| creditsUsed | Number | Snapshot at time of booking |
-| notes | String | Learner's notes |
-| feedback.rating | Number | 1–5, post-completion |
-| feedback.comment | String | Optional comment |
-
----
-
-## 4. Component Hierarchy
-
-```
-App
-├── AuthProvider (Context)
-├── Router
-│   └── Navbar
-│       ├── Home
-│       ├── Login
-│       ├── Register
-│       ├── SkillsList          ← Browse + Search + Filter
-│       ├── SkillDetail         ← View + Request Session
-│       ├── SkillForm           ← Create Skill (instructor/admin)
-│       ├── Dashboard           ← Sessions management per role
-│       └── AdminPanel          ← User/Skill/Session oversight
+skill-exchange/
+├── backend/
+│   ├── src/
+│   │   ├── config/db.js
+│   │   ├── middleware/auth.js
+│   │   ├── models/         (User, Skill, Session)
+│   │   ├── routes/         (auth, skills, sessions, users)
+│   │   └── server.js
+│   ├── .env.example
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── api/axios.js
+│   │   ├── context/AuthContext.js
+│   │   ├── components/Navbar.js
+│   │   ├── pages/          (Home, Login, Register, SkillsList, SkillDetail, SkillForm, Dashboard, AdminPanel)
+│   │   ├── App.js
+│   │   └── index.js
+│   └── package.json
+├── DOCUMENTATION.md
+└── README.md
 ```
 
 ---
 
-## 5. API Endpoints
+## Setup & Run
 
-Full interactive Swagger docs are available at `http://localhost:5000/api/docs` when the backend is running.
+### 1. Backend
 
-### Auth
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | /api/auth/register | None | Register new user |
-| POST | /api/auth/login | None | Login, returns JWT |
-| GET | /api/auth/me | Bearer | Get own profile |
-
-### Skills
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/skills | None | List all (search/filter) |
-| GET | /api/skills/:id | None | Get single skill |
-| POST | /api/skills | Instructor/Admin | Create skill |
-| PUT | /api/skills/:id | Owner/Admin | Update skill |
-| DELETE | /api/skills/:id | Owner/Admin | Delete skill |
-
-### Sessions
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/sessions | Bearer | Get sessions (role-filtered) |
-| POST | /api/sessions | Learner | Request session |
-| PATCH | /api/sessions/:id/status | Bearer | Update status |
-| POST | /api/sessions/:id/feedback | Learner | Submit feedback |
-
-### Users
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/users | Admin | List all users |
-| PUT | /api/users/profile | Bearer | Update own profile |
-| GET | /api/users/:id | None | Public profile |
-| DELETE | /api/users/:id | Admin | Delete user |
-
----
-
-## 6. Role-Based Access
-
-| Feature | Learner | Instructor | Admin |
-|---|---|---|---|
-| Browse skills | ✓ | ✓ | ✓ |
-| Request session | ✓ | — | ✓ |
-| Create skill | — | ✓ | ✓ |
-| Approve/reject session | — | ✓ | ✓ |
-| Mark session complete | — | ✓ | ✓ |
-| Submit feedback | ✓ | — | — |
-| View all users | — | — | ✓ |
-| Delete any skill/user | — | — | ✓ |
-
----
-
-## 7. Setup Instructions
-
-### Prerequisites
-- Node.js v18+
-- MongoDB Atlas account (free tier)
-
-### Backend
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# Fill in MONGO_URI and JWT_SECRET in .env
+# Edit .env: add your MongoDB Atlas URI and a JWT secret
 npm run dev
-# Server runs at http://localhost:5000
-# Swagger docs at http://localhost:5000/api/docs
 ```
 
-### Frontend
+Backend runs at: `http://localhost:5000`  
+Swagger API docs: `http://localhost:5000/api/docs`
+
+### 2. Frontend
+
 ```bash
 cd frontend
 npm install
 npm start
-# App runs at http://localhost:3000
 ```
+
+Frontend runs at: `http://localhost:3000`
 
 ---
 
-## 8. Assumptions
-- Credits are virtual; no real payment integration.
-- New users receive 5 starter credits on registration.
-- Credits are deducted from the learner when a session is approved.
-- Instructors earn credits when a session is marked complete.
-- Overlapping bookings for the same skill at the same time are prevented server-side.
-- Swagger UI provides the complete interactive API documentation.
+## User Roles
+
+| Role | Capabilities |
+|---|---|
+| **Learner** | Browse skills, request sessions, submit feedback |
+| **Instructor** | All of above + create/edit skills, approve/reject/complete sessions |
+| **Admin** | Full access — manage all users, skills, sessions |
+
+New users start with **5 credits**. Credits are deducted on session approval and earned on session completion (instructor).
+
+---
+
+## API Endpoints Summary
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | /api/auth/register | None | Register user |
+| POST | /api/auth/login | None | Login, get JWT |
+| GET | /api/auth/me | Bearer | Own profile |
+| GET | /api/skills | None | List/search/filter skills |
+| POST | /api/skills | Instructor | Create skill |
+| PUT | /api/skills/:id | Owner | Update skill |
+| DELETE | /api/skills/:id | Owner/Admin | Delete skill |
+| GET | /api/sessions | Bearer | Sessions (role-filtered) |
+| POST | /api/sessions | Learner | Request session |
+| PATCH | /api/sessions/:id/status | Bearer | Approve/reject/complete |
+| POST | /api/sessions/:id/feedback | Learner | Rate completed session |
+| GET | /api/users | Admin | All users |
+| PUT | /api/users/profile | Bearer | Update profile |
+| DELETE | /api/users/:id | Admin | Delete user |
+
+Full interactive docs with request/response schemas at `/api/docs`.
+
+---
+
+## AI Usage
+
+Built using **Option A** — from scratch with Claude (claude.ai) as AI assistant.  
+See `AI_Usage_Log_Reflection_Report.docx` for the full prompt log and reflection.
