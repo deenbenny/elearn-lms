@@ -1,4 +1,4 @@
-# Community Skill Exchange Portal
+# ELearn LMS Portal
 
 **SE ZG503: Full Stack Application Development — Assignment 2026**
 **Student:** Benedict Johnson | **BITS Pilani WILP**
