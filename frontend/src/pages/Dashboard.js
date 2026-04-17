@@ -10,6 +10,8 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState([]);
   const [mySkills, setMySkills] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [feedbackOpen, setFeedbackOpen] = useState(null);
+  const [feedbackForm, setFeedbackForm] = useState({});
 
   useEffect(() => {
     const load = async () => {
@@ -32,6 +34,18 @@ export default function Dashboard() {
       setSessions(prev => prev.map(s => s._id === id ? { ...s, status } : s));
     } catch (err) {
       alert(err.response?.data?.message || 'Action failed');
+    }
+  };
+
+  const submitFeedback = async (sessionId) => {
+    const { rating, comment } = feedbackForm[sessionId] || {};
+    if (!rating) return alert('Please select a star rating');
+    try {
+      await api.post(`/sessions/${sessionId}/feedback`, { rating: Number(rating), comment: comment || '' });
+      setSessions(prev => prev.map(s => s._id === sessionId ? { ...s, feedback: { rating, comment } } : s));
+      setFeedbackOpen(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to submit feedback');
     }
   };
 
@@ -84,7 +98,37 @@ export default function Dashboard() {
                   {user.role === 'learner' && s.status === 'pending' && (
                     <button style={actionBtn('#aaa')} onClick={() => updateStatus(s._id, 'cancelled')}>Cancel</button>
                   )}
+                  {user.role === 'learner' && s.status === 'completed' && !s.feedback?.rating && (
+                    <button style={actionBtn('#f5a623')} onClick={() => setFeedbackOpen(feedbackOpen === s._id ? null : s._id)}>Leave Feedback</button>
+                  )}
+                  {user.role === 'learner' && s.status === 'completed' && s.feedback?.rating && (
+                    <span style={{ fontSize: '0.82rem', color: '#f5a623' }}>★ {s.feedback.rating} rated</span>
+                  )}
                 </div>
+                {feedbackOpen === s._id && (
+                  <div style={{ width: '100%', marginTop: '0.75rem', padding: '0.9rem', background: '#f9f9f9', borderRadius: '8px', borderTop: '1px solid #eee' }}>
+                    <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#555', marginBottom: '0.5rem' }}>Rate this session:</p>
+                    <div style={{ display: 'flex', gap: '4px', marginBottom: '0.6rem' }}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button key={star} data-star={star}
+                          onClick={() => setFeedbackForm(f => ({ ...f, [s._id]: { ...(f[s._id] || {}), rating: star } }))}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1, padding: '0 2px', color: (feedbackForm[s._id]?.rating || 0) >= star ? '#f5a623' : '#ddd' }}>
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      placeholder="Comment (optional)"
+                      value={feedbackForm[s._id]?.comment || ''}
+                      onChange={e => setFeedbackForm(f => ({ ...f, [s._id]: { ...(f[s._id] || {}), comment: e.target.value } }))}
+                      style={{ width: '100%', padding: '7px 10px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '0.85rem', resize: 'none', height: '60px', boxSizing: 'border-box', marginBottom: '0.5rem' }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button style={actionBtn('#f5a623')} onClick={() => submitFeedback(s._id)}>Submit</button>
+                      <button style={actionBtn('#aaa')} onClick={() => setFeedbackOpen(null)}>Cancel</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
