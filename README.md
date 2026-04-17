@@ -110,6 +110,7 @@ Full interactive docs with request/response schemas at `/api/docs`.
 ---
 
 ## AI Usage
-
 Built using **Option A** — from scratch with Claude (claude.ai) as AI assistant.  
-See `AI_Usage_Log_Reflection_Report.docx` for the full prompt log and reflection.
+
+## Video Recordings
+https://drive.google.com/file/d/1nTfiFkauJrvR89xXxDHvcnlVxvSFWK1n/view?usp=sharing
